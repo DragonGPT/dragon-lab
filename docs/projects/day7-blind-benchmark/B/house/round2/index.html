@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#263630">
+<title>溪畔归处 · 林间小屋</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#899481;color:#fcf1d7;font-family:"PingFang SC","Microsoft YaHei",sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}.title{position:absolute;left:5%;top:6.5%;pointer-events:none;text-shadow:0 2px 24px #23362a55}.eyebrow{font-size:10px;letter-spacing:4px;opacity:.8;display:flex;align-items:center;gap:12px}.eyebrow:before{content:"";display:block;width:27px;height:1px;background:currentColor}h1{font-family:"Songti SC","Noto Serif CJK SC",serif;font-size:clamp(27px,3vw,42px);font-weight:400;letter-spacing:9px;margin:17px 0 12px}.subtitle{font-size:11px;font-weight:300;letter-spacing:3px;opacity:.76}.footer{position:absolute;bottom:5%;left:5%;right:5%;display:flex;justify-content:space-between;align-items:end;pointer-events:none;font-size:10px;letter-spacing:2px;text-shadow:0 2px 12px #15291e}.location{display:flex;align-items:center;gap:10px}.dot{width:5px;height:5px;background:#f2cd7f;border-radius:50%;box-shadow:0 0 12px #edb250}.hint{opacity:.8;text-align:right;line-height:2}.line{position:absolute;left:5%;right:5%;bottom:3.4%;height:1px;background:linear-gradient(90deg,#f6e1ae55,transparent)}#loading{position:absolute;inset:0;background:#34463d;display:grid;place-content:center;text-align:center;gap:18px;z-index:4;transition:opacity .8s;letter-spacing:5px;font-family:serif}#loading small{font-family:sans-serif;font-size:10px;letter-spacing:3px;opacity:.65}.vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 52% 45%,transparent 38%,#0e261c1c 100%)}@media(max-width:600px){.title{top:5%;left:7%}h1{letter-spacing:6px}.subtitle{font-size:10px;letter-spacing:2px}.footer{left:7%;right:7%;bottom:5%}.location{font-size:9px;letter-spacing:1px}.hint{font-size:9px;letter-spacing:1px}.eyebrow{font-size:9px;letter-spacing:3px}}
+
+.view-controls{position:absolute;right:5%;top:7%;display:flex;gap:7px;z-index:3;align-items:center}.mode-group{display:flex;padding:4px;border:1px solid #e2e3cf44;background:#233d30b8;border-radius:30px;backdrop-filter:blur(12px)}button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:none;cursor:pointer;color:#f9eed6;border:0}button:focus-visible{outline:2px solid #f3ce8c;outline-offset:4px}.mode-group button{padding:10px 19px;font-size:12px;letter-spacing:2px;border-radius:25px;background:transparent;transition:background .2s,color .2s}.mode-group button[aria-pressed="true"]{color:#334236;background:#ebd8ac}.reset-view{border:1px solid #e2e3cf44;border-radius:25px;background:#233d30b8;backdrop-filter:blur(12px);padding:14px 18px;font-size:11px;letter-spacing:1px}.direction-pad{position:absolute;bottom:13%;left:5%;display:grid;grid-template-columns:45px 45px 45px;grid-template-rows:45px 45px;gap:7px;z-index:3;user-select:none;-webkit-user-select:none}.direction-pad[hidden]{display:none!important}.direction-pad button{background:#233d30b8;border:1px solid #e2e3cf55;border-radius:14px;backdrop-filter:blur(8px);font-size:20px}.direction-pad button.held{background:#ebd8ac;color:#334236}.direction-pad button[data-direction="forward"]{grid-column:2}.direction-pad button[data-direction="left"]{grid-column:1;grid-row:2}.direction-pad button[data-direction="backward"]{grid-column:2;grid-row:2}.direction-pad button[data-direction="right"]{grid-column:3;grid-row:2}@media(max-width:600px){.view-controls{top:185px;left:7%;right:auto;gap:7px}.mode-group button{padding:9px 15px;font-size:11px}.reset-view{padding:13px 13px;font-size:10px}.direction-pad{left:7%;bottom:14%;grid-template-columns:43px 43px 43px;grid-template-rows:43px 43px}}
+</style>
+</head>
+<body>
+<div id="loading">林间，灯已亮起<small>正在走近溪畔的小屋</small></div>
+<div class="title"><div class="eyebrow">A QUIET PLACE TO RETURN</div><h1>溪畔归处</h1><div class="subtitle">日落以后，山林把温柔留给你。</div></div>
+<div class="view-controls" aria-label="相机模式"><div class="mode-group"><button id="orbitMode" aria-pressed="true">环绕</button><button id="walkMode" aria-pressed="false">漫游</button></div><button class="reset-view" id="resetView">↺ 回到起点</button></div>
+<div class="direction-pad" id="directionPad" aria-label="漫游方向" hidden><button data-direction="forward" aria-label="向前走">↑</button><button data-direction="left" aria-label="向左走">←</button><button data-direction="backward" aria-label="向后走">↓</button><button data-direction="right" aria-label="向右走">→</button></div>
+<div class="vignette"></div><div class="footer"><div class="location"><span class="dot"></span>林间小屋 &nbsp; / &nbsp; 黄昏时分</div><div class="hint" id="operationHint" aria-live="polite">拖拽环绕 · 滚轮缩放<br>触屏单指旋转 · 双指缩放</div></div><div class="line"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+// ── Renderer, atmosphere and deterministic helpers ───────────────────────────
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x9da793,.018);
+const camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,220);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+document.body.prepend(renderer.domElement);
+let seed=7059;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}const rr=(a,b)=>a+(b-a)*rand();
+const clamp=THREE.MathUtils.clamp;const mat=(color,roughness=.9)=>new THREE.MeshStandardMaterial({color,roughness});
+const wood=mat(0x66452c),woodLight=mat(0x94643c),darkWood=mat(0x3b2d21),trim=mat(0x382b20),stone=mat(0x72716a),iron=mat(0x283638,.55);
+function mesh(geo,material,x=0,y=0,z=0,parent=scene){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+const cubeGeo=new THREE.BoxGeometry(1,1,1);function box(w,h,d,material,x,y,z,parent=scene){const m=mesh(cubeGeo,material,x,y,z,parent);m.scale.set(w,h,d);return m}
+function cyl(r1,r2,h,material,x,y,z,n=8,parent=scene){return mesh(new THREE.CylinderGeometry(r1,r2,h,n),material,x,y,z,parent)}
+function beam(a,b,r,material,parent=scene){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),dir=bv.clone().sub(av);const m=cyl(r,r,dir.length(),material,0,0,0,7,parent);m.position.copy(av.add(bv).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());return m}
+function groundY(x,z){return -.12+.13*Math.sin(x*.27)*Math.cos(z*.22)+.12*Math.sin(z*.14+x*.1)}
+function streamX(z){return 6.5+2.3*Math.sin(z*.145)+.45*Math.sin(z*.43)}
+function streamW(z){return 2.8+.42*Math.sin(z*.27)}
+const sky=new THREE.Mesh(new THREE.SphereGeometry(140,32,24),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color('#647f83')},horizon:{value:new THREE.Color('#f4c99a')},bottom:{value:new THREE.Color('#b6baa1')}},vertexShader:'varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 v;uniform vec3 top,horizon,bottom;void main(){float h=normalize(v).y;vec3 c=mix(horizon,top,smoothstep(0.,.8,h));c=mix(c,bottom,(1.-smoothstep(-.2,0.,h)));gl_FragColor=vec4(c,1.);}'}));scene.add(sky);
+scene.add(new THREE.HemisphereLight(0xb7d4d7,0x4c5333,2));
+const sun=new THREE.DirectionalLight(0xffd49a,3.2);sun.position.set(-13,18,7);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:25,bottom:-25,near:1,far:65});sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun);
+const fill=new THREE.DirectionalLight(0x9fc4cf,.65);fill.position.set(12,8,-10);scene.add(fill);
+// A soft setting sun, distant layered hills, and wisps of cloud.
+const disc=mesh(new THREE.SphereGeometry(3.1,32,24),new THREE.MeshBasicMaterial({color:0xffe5af,fog:false}),-36,14,-74);disc.castShadow=false;
+for(let k=0;k<3;k++){const pts=[];for(let i=0;i<31;i++)pts.push(new THREE.Vector2(-95+i*6.4,8+Math.sin(i*.53+k)*4+Math.sin(i*1.61)*2+k*1.5));pts.push(new THREE.Vector2(97,-10),new THREE.Vector2(-95,-10));const g=new THREE.ShapeGeometry(new THREE.Shape(pts));const m=mesh(g,new THREE.MeshBasicMaterial({color:[0x8e9f96,0x84978c,0x738e81][k],side:THREE.DoubleSide}),0,0,-85+k*13);m.castShadow=false;}
+
+// ── Rolling forest floor and the winding creek ──────────────────────────────
+const groundGeo=new THREE.PlaneGeometry(150,150,130,130);groundGeo.rotateX(-Math.PI/2);const gp=groundGeo.attributes.position;const gc=[];
+for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i),d=Math.abs(x-streamX(z)),bank=streamW(z)*.5;let y=groundY(x,z);if(d<bank+.7)y-=.58*(1-clamp((d-bank+.5)/1.2,0,1));gp.setY(i,y);const c=new THREE.Color().setHSL(.215+rr(-.02,.02),.22, .255+rr(-.035,.035));gc.push(c.r,c.g,c.b)}
+groundGeo.setAttribute('color',new THREE.Float32BufferAttribute(gc,3));groundGeo.computeVertexNormals();mesh(groundGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));
+const waterPos=[],uv=[],ind=[],waterN=260;
+for(let i=0;i<=waterN;i++){const z=-65+i*110/waterN,x=streamX(z),w=streamW(z);waterPos.push(x-w/2,-.31,z,x+w/2,-.31,z);uv.push(0,z,1,z);if(i<waterN){const a=i*2;ind.push(a,a+2,a+1,a+1,a+2,a+3)}}
+const waterGeo=new THREE.BufferGeometry();waterGeo.setAttribute('position',new THREE.Float32BufferAttribute(waterPos,3));waterGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));waterGeo.setIndex(ind);waterGeo.computeVertexNormals();
+const waterMat=new THREE.ShaderMaterial({uniforms:{time:{value:0},fogColor:{value:new THREE.Color(0x9da793)}},vertexShader:`varying vec3 vP;varying vec2 vUv;uniform float time;void main(){vec3 p=position;p.y+=sin(p.z*2.+time*.7+p.x)*.013+sin(p.x*8.+time)*.009;vP=p;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec3 vP;varying vec2 vUv;uniform float time;uniform vec3 fogColor;void main(){float wave=sin(vP.z*10.+sin(vP.x*6.+time*.55)*2.-time*1.4);float wave2=sin(vP.z*23.+vP.x*8.-time*2.);vec3 col=mix(vec3(.095,.22,.235),vec3(.34,.47,.43),.5+.35*sin(vP.z*.36+vP.x*.7));float shine=pow(max(0.,wave),25.)*.27+pow(max(0.,wave2),36.)*.11;col+=shine*vec3(.86,.81,.59);float edge=smoothstep(.43,.5,abs(vUv.x-.5));col=mix(col,vec3(.52,.58,.45),edge*.44);float dist=distance(cameraPosition,vP);col=mix(col,fogColor,1.-exp(-dist*dist*.00016));gl_FragColor=vec4(col,1.);}`,side:THREE.DoubleSide});mesh(waterGeo,waterMat).castShadow=false;
+const rockGeo=new THREE.IcosahedronGeometry(1,1);const rockMats=[mat(0x7e8376),mat(0x696f66),mat(0x959585),mat(0x5a655a)];
+function rock(x,z,s=1){const m=mesh(rockGeo,rockMats[Math.floor(rand()*4)],x,groundY(x,z)+.1,z);m.scale.set(s*rr(.7,1.4),s*rr(.36,.7),s*rr(.7,1.2));m.rotation.set(rr(0,1),rr(0,6),rr(0,1));return m}
+for(let i=0;i<240;i++){const z=rr(-35,34),side=rand()<.5?-1:1,x=streamX(z)+side*(streamW(z)*.5+rr(-.04,.75));rock(x,z,rr(.17,.62))}
+for(let i=0;i<65;i++){const x=rr(-22,22),z=rr(-23,20);if(Math.abs(x-streamX(z))>3&&!(Math.abs(x)<4&&Math.abs(z)<4))rock(x,z,rr(.12,.75))}
+
+// ── Hand-built cedar cabin: individual siding, rafters, shingles and joinery ─
+const house=new THREE.Group();scene.add(house);house.position.set(-1.6,.1,-1.3);
+box(6.4,.52,5.1,stone,0,.22,0,house);
+for(let i=0;i<16;i++){const x=-3.05+(i%8)*.87,z=i<8?2.57:-2.57;const b=box(.8,.38,.23,rockMats[i%4],x,.28,z,house);b.rotation.z=rr(-.03,.03)}
+// Procedural wood grain, generated locally without asset requests.
+const cv=document.createElement('canvas');cv.width=256;cv.height=128;const cx=cv.getContext('2d');cx.fillStyle='#92653e';cx.fillRect(0,0,256,128);
+for(let i=0;i<550;i++){const y=rr(0,128);cx.strokeStyle=`rgba(${rand()>.5?'35,20,9':'222,170,100'},${rr(.03,.2)})`;cx.lineWidth=rr(.3,1.5);cx.beginPath();cx.moveTo(0,y);for(let x=0;x<=256;x+=8)cx.lineTo(x,y+Math.sin(x*.025+i)*rr(.2,2));cx.stroke()}
+const grain=new THREE.CanvasTexture(cv);grain.colorSpace=THREE.SRGBColorSpace;grain.wrapS=grain.wrapT=THREE.RepeatWrapping;const siding=[.7,.8,.9,1].map(v=>new THREE.MeshStandardMaterial({map:grain,color:new THREE.Color(v,v*.94,v*.82),roughness:.94}));
+box(6.15,3.65,4.8,wood,0,2.28,0,house);
+for(let j=0;j<16;j++){const y=.65+j*.218;box(6.35,.205,.14,siding[j%4],0,y,2.47,house);box(6.35,.205,.14,siding[(j+2)%4],0,y,-2.47,house);box(.14,.205,4.8,siding[(j+1)%4],3.16,y,0,house);box(.14,.205,4.8,siding[(j+3)%4],-3.16,y,0,house)}
+for(const x of [-3.12,3.12])for(const z of [-2.45,2.45])box(.22,3.8,.22,darkWood,x,2.25,z,house);
+const gableShape=new THREE.Shape();gableShape.moveTo(-3.2,4);gableShape.lineTo(0,6.12);gableShape.lineTo(3.2,4);gableShape.closePath();
+for(const z of [-2.48,2.48]){const m=mesh(new THREE.ShapeGeometry(gableShape),new THREE.MeshStandardMaterial({color:0x765137,side:THREE.DoubleSide,roughness:1}),0,0,z,house);for(let j=0;j<10;j++){const y=4.05+j*.19,w=(6.12-y)/2.12*6.4;box(w,.175,.07,siding[j%4],0,y,z+(z>0?.04:-.04),house)}}
+const roofSlope=Math.atan2(2.25,3.65),roofLen=Math.hypot(2.25,3.65);const roofMats=[mat(0x374743),mat(0x43524b),mat(0x4c584b),mat(0x35423f),mat(0x56604d)];
+for(const side of [-1,1]){const slab=box(roofLen,.17,6.05,roofMats[0],side*1.825,5.03,0,house);slab.rotation.z=-side*roofSlope;
+for(let row=0;row<13;row++){const t=(row+.5)/13;for(let col=0;col<14;col++){const z=-2.87+col*.435+(row%2)*.10;const sh=box(roofLen/13+.06,.055,.426,roofMats[Math.floor(rand()*roofMats.length)],side*t*3.65,6.18-t*2.25+.075,z,house);sh.rotation.z=-side*roofSlope;}}
+for(const z of [-3.06,3.06]){const fascia=box(roofLen+.1,.21,.16,darkWood,side*1.825,5.06,z,house);fascia.rotation.z=-side*roofSlope;}}
+beam([0,6.23,-3.05],[0,6.23,3.05],.105,darkWood,house);
+for(const z of [-2.55,2.64]){beam([-3.25,4,z],[0,6.1,z],.085,woodLight,house);beam([3.25,4,z],[0,6.1,z],.085,woodLight,house);beam([-3.15,4,z],[3.15,4,z],.1,darkWood,house);beam([0,4,z],[0,6.1,z],.08,darkWood,house)}
+// Amber glazing, mullions, curtains and exterior shutters.
+const glow=new THREE.MeshStandardMaterial({color:0xffd48c,emissive:0xffad3c,emissiveIntensity:2.3,roughness:.45});const curtain=mat(0xd3b986);curtain.emissive=new THREE.Color(0x6f3e11);curtain.emissiveIntensity=.4;
+function windowFront(x,y,z,w,h,parent=house){box(w+.26,h+.28,.17,darkWood,x,y,z,parent);box(w,h,.08,glow,x,y,z+.1,parent);box(w+.37,.12,.35,woodLight,x,y-h/2-.09,z+.15,parent);for(const dx of [-w*.39,w*.39]){const m=box(w*.17,h*.95,.05,curtain,x+dx,y,z+.16,parent);m.rotation.z=dx<0?-.04:.04}box(.07,h,.09,woodLight,x,y,z+.2,parent);box(w,.07,.09,woodLight,x,y,z+.2,parent);for(const side of [-1,1]){box(.42,h+.12,.09,wood,x+side*(w/2+.38),y,z,parent);for(let k=0;k<5;k++)box(.38,.045,.04,darkWood,x+side*(w/2+.38),y-h*.4+k*h*.2,z+.07,parent)}}
+windowFront(-1.83,2.35,2.59,1.25,1.55);windowFront(1.76,2.35,2.59,1.15,1.55);windowFront(0,4.83,2.56,.82,.92);
+const sideWindows=new THREE.Group();sideWindows.position.set(3.27,0,-.25);sideWindows.rotation.y=Math.PI/2;house.add(sideWindows);windowFront(0,2.35,0,1.65,1.55,sideWindows);
+windowFront(0,2.35,-2.61,1.4,1.4);
+// Door, small glazed transom, forged handle and welcoming porch.
+box(1.21,2.8,.2,darkWood,0,1.97,2.64,house);for(let i=0;i<6;i++)box(.174,2.57,.15,siding[i%4],-.455+i*.182,1.93,2.76,house);
+box(.72,.53,.07,glow,0,2.74,2.86,house);box(.05,.55,.07,wood,0,2.74,2.91,house);box(.76,.05,.07,wood,0,2.74,2.91,house);
+box(.07,.28,.09,iron,.39,1.67,2.9,house);mesh(new THREE.SphereGeometry(.065,8,8),iron,.39,1.73,2.98,house);
+box(6.9,.24,1.75,darkWood,0,.56,3.28,house);for(let i=0;i<24;i++)box(.272,.07,1.7,siding[i%4],-3.25+i*.283,.72,3.28,house);
+for(let i=0;i<3;i++)box(1.94-i*.08,.17, .46,woodLight,0,.12+i*.17,4.64-i*.36,house);
+const awning=box(6.85,.14,1.85,roofMats[0],0,3.78,3.29,house);awning.rotation.x=.14;
+for(let i=0;i<19;i++){const r=box(.055,.08,1.88,roofMats[2],-3.28+i*.365,3.88,3.29,house);r.rotation.x=.14;}
+for(const x of [-3.1,3.1]){box(.17,3.1,.17,darkWood,x,2.23,3.95,house);beam([x,2.8,3.95],[x+(x<0?.57:-.57),3.55,3.95],.06,woodLight,house)}
+box(6.85,.21,.17,darkWood,0,3.57,4.18,house);
+for(const side of [-1,1]){box(2.05,.12,.12,woodLight,side*2.13,1.51,3.99,house);box(2.05,.10,.10,wood,side*2.13,.88,3.99,house);for(let i=0;i<7;i++)box(.055,.62,.055,wood,side*(1.25+i*.285),1.2,3.99,house)}
+const warmLight=new THREE.PointLight(0xffac4f,22,8,2);warmLight.position.set(0,2,3.45);house.add(warmLight);
+function lantern(x,y,z){const g=new THREE.Group();g.position.set(x,y,z);house.add(g);box(.25,.4,.23,glow,0,0,0,g);for(const a of [-1,1])for(const b of [-1,1])box(.035,.47,.035,iron,a*.14,0,b*.13,g);box(.35,.055,.33,iron,0,-.24,0,g);const cap=mesh(new THREE.ConeGeometry(.28,.18,4),iron,0,.29,0,g);cap.rotation.y=Math.PI/4;beam([0,.35,0],[0,.48,0],.025,iron,g);const l=new THREE.PointLight(0xffb955,7,4,2);l.position.set(0,0,.1);g.add(l)}lantern(.91,2.5,2.98);lantern(-3.09,2.4,3.99);
+// Stone chimney with masonry and open, soot-dark throat.
+box(.85,2.4,.85,stone,1.74,6.05,-1.35,house);for(let row=0;row<8;row++)for(let j=0;j<3;j++){const offset=row%2*.1;box(.24,.25,.075,rockMats[(j+row)%4],1.48+j*.27+offset,5.05+row*.28,-.9,house);box(.075,.25,.24,rockMats[(j+row+1)%4],2.19,5.05+row*.28,-1.61+j*.27,house)}
+box(1.05,.16,1.05,darkWood,1.74,7.33,-1.35,house);box(.63,.025,.63,iron,1.74,7.425,-1.35,house);
+// Window boxes, herb pots, a bench, doormat and a neatly stacked woodpile.
+const leafMats=[mat(0x4f6434),mat(0x65773c),mat(0x80904d)];const flowerMat=mat(0xdba374);
+for(const x of [-1.83,1.76]){box(1.5,.27,.4,wood,x,1.38,2.85,house);for(let i=0;i<19;i++){const p=mesh(new THREE.IcosahedronGeometry(rr(.07,.13),0),leafMats[i%3],x+rr(-.65,.65),rr(1.51,1.75),rr(2.78,3),house);if(i%3===0)mesh(new THREE.IcosahedronGeometry(.055,0),flowerMat,p.position.x,p.position.y+.09,p.position.z,house)}}
+box(1.6,.1,.53,woodLight,-1.8,.98,3.33,house);box(1.6,.55,.08,wood,-1.8,1.3,3.07,house);for(const x of [-2.42,-1.18]){box(.1,.36,.1,darkWood,x,.82,3.52,house);box(.1,.36,.1,darkWood,x,.82,3.1,house)}
+box(.96,.025,.48,mat(0x6d674c),0,.77,3.25,house);
+for(let row=0;row<3;row++)for(let col=0;col<5-row;col++){const log=cyl(.155,.17,.75,wood,3.5+row*.05,.3+row*.26,-1.1+col*.31,9,house);log.rotation.z=Math.PI/2;const end=cyl(.133,.133,.012,woodLight,3.88+row*.05,.3+row*.26,-1.1+col*.31,9,house);end.rotation.z=Math.PI/2;}
+
+// ── Worn stone path, little footbridge and country details ───────────────────
+for(let i=0;i<17;i++){const z=3.7+i*.58,x=-1.6-Math.sin(i*.21)*1.15;const p=rock(x,z,rr(.46,.63));p.scale.y=.09;p.position.y=groundY(x,z)+.06}
+const bridgeZ=5.9,bridgeX=streamX(bridgeZ);
+for(let i=0;i<17;i++){const x=bridgeX-2.2+i*.275;box(.255,.12,1.63,siding[i%4],x,.35+Math.sin(i/16*Math.PI)*.18,bridgeZ)}
+for(const z of [bridgeZ-.72,bridgeZ+.72]){beam([bridgeX-2.35,.25,z],[bridgeX+2.35,.25,z],.09,darkWood);for(const x of [bridgeX-2.2,bridgeX+2.2]){box(.12,1.1,.12,wood,x,.75,z)}beam([bridgeX-2.2,1.2,z],[bridgeX+2.2,1.2,z],.055,woodLight)}
+for(let i=0;i<8;i++){const x=1+i*.6;const p=rock(x,4.1+Math.sin(i*.2)*1.7,.4);p.scale.y=.08;p.position.y=.03}
+for(let i=0;i<8;i++){const x=-8.5+i*1.7;box(.15,1.3,.15,wood,x,.57,-7.2);if(i<7){box(1.8,.12,.1,woodLight,x+.85,.75,-7.2);box(1.8,.12,.1,wood,x+.85,.3,-7.2)}}
+// A rain barrel and terracotta pots beside the porch.
+const barrel=cyl(.48,.42,1,wood,2.38,.55,2.18,14);for(const y of [.2,.77]){const hoop=mesh(new THREE.TorusGeometry(.455,.025,5,18),iron,2.38,y,2.18);hoop.rotation.x=Math.PI/2;}cyl(.4,.4,.04,darkWood,2.38,1.06,2.18,14);
+for(const [x,z] of [[-4.5,2.5],[1.1,2.6]]){cyl(.24,.17,.4,mat(0x9b6746),x,.27,z,10);for(let i=0;i<9;i++){beam([x,.45,z],[x+rr(-.22,.22),rr(.65,1),z+rr(-.2,.2)],.016,leafMats[1]);}}
+
+// ── Forest: branching firs, sunlit birches and thousands of grass blades ──────
+const trunkMat=mat(0x574533);const pineMat=[mat(0x324f40),mat(0x3c5944),mat(0x47644b),mat(0x536e50)];
+const foliageGeo=new THREE.ConeGeometry(1,1,9,1);const pineParts=[];const swayTrees=[];
+function pine(x,z,h){const group=new THREE.Group();group.position.set(x,groundY(x,z),z);scene.add(group);cyl(.014*h,.022*h,h*.72,trunkMat,0,h*.36,0,8,group);for(let j=0;j<7;j++){const y=h*(.34+j*.085),r=h*(.245-j*.027);const p=mesh(foliageGeo,pineMat[j%4],0,y,0,group);p.scale.set(r,h*.31,r);p.rotation.y=rr(0,6.28);if(j<4){for(let k=0;k<5;k++){const a=k*Math.PI*.4+j;beam([0,y-h*.08,0],[Math.cos(a)*r*.9,y-h*.16,Math.sin(a)*r*.9],.007*h,trunkMat,group)}}}if(swayTrees.length<18)swayTrees.push({g:group,phase:rand()*6});}
+// Clear sight lines preserve the house and the stream, while silhouettes frame them.
+for(let i=0;i<62;i++){const z=rr(-39,-10),x=rr(-33,32);if(Math.abs(x-streamX(z))>2.8)pine(x,z,rr(6,12))}
+for(const [x,z,h] of [[-12,2,11],[-10,-3,9],[-16,8,13],[-17,-7,12],[17,-2,12],[19,5,14],[14,-8,9],[24,12,13],[-24,15,14]])pine(x,z,h);
+const birchBark=mat(0xa6a38a),birchLeaves=[mat(0x9f9d50),mat(0xb5a259),mat(0x7d8d4c)];
+function birch(x,z,h){cyl(.12,.22,h,birchBark,x,h/2,z,8);for(let i=0;i<9;i++){const y=h*.45+i*.055*h,a=i*2.4,reach=rr(1.1,2.3);beam([x,y,z],[x+Math.cos(a)*reach,y+1.4,z+Math.sin(a)*reach],.07,birchBark);const crown=mesh(new THREE.IcosahedronGeometry(1,1),birchLeaves[i%3],x+Math.cos(a)*reach,y+1.55,z+Math.sin(a)*reach);crown.scale.set(rr(1.2,1.8),rr(.65,1.1),rr(1.1,1.7));}for(let i=0;i<13;i++)box(.23,.07,.025,trunkMat,x+.015,.4+i*h/14,z+.19)}birch(-7.4,-3.8,6.4);birch(13,-5.6,7.5);
+// Efficient instanced tufts: 20,000 blades in a handful of draw calls.
+const bladeGeo=new THREE.BufferGeometry();bladeGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.045,0,0,.045,0,0,.015,.4,.045,0,.65,.1],3));bladeGeo.setIndex([0,1,2,0,2,3]);bladeGeo.computeVertexNormals();
+const grassMat=new THREE.MeshStandardMaterial({color:0x87935a,roughness:1,side:THREE.DoubleSide});const grass=new THREE.InstancedMesh(bladeGeo,grassMat,22500);grass.receiveShadow=true;scene.add(grass);const dummy=new THREE.Object3D();let gi=0;
+for(let i=0;i<7500;i++){const x=rr(-32,32),z=rr(-33,25),dist=Math.abs(x-streamX(z));if(dist<streamW(z)*.5+.24)continue;if(x>-5.2&&x<2.2&&z>-4.5&&z<3)continue;if(z>3&&z<14&&Math.abs(x-(-1.6-Math.sin((z-3.7)/.58*.21)*1.15))<.67)continue;const y=groundY(x,z);for(let j=0;j<3;j++){dummy.position.set(x+rr(-.12,.12),y,z+rr(-.12,.12));dummy.rotation.set(0,rr(0,6.28),rr(-.13,.13));const s=rr(.38,1);dummy.scale.set(s,s,s);dummy.updateMatrix();grass.setMatrixAt(gi,dummy.matrix);grass.setColorAt(gi,new THREE.Color().setHSL(rr(.18,.26),rr(.23,.4),rr(.23,.39)));gi++}}
+grass.count=gi;grass.instanceMatrix.needsUpdate=true;
+const fernGeo=new THREE.BufferGeometry();const fv=[],fi=[];for(let f=0;f<7;f++){const a=f*Math.PI*2/7;for(let k=1;k<9;k++){const t=k/9,r=t*.7,y=Math.sin(t*Math.PI*.85)*.55,w=Math.sin(t*Math.PI)*.19;const bx=Math.cos(a)*r,bz=Math.sin(a)*r;for(const s of [-1,1]){let p=fv.length/3;fv.push(bx,y,bz,bx+Math.cos(a+.9*s)*w,y+.025,bz+Math.sin(a+.9*s)*w,Math.cos(a)*(r+.12),Math.sin((t+.15)*Math.PI*.85)*.55,Math.sin(a)*(r+.12));fi.push(p,p+1,p+2)}}}fernGeo.setAttribute('position',new THREE.Float32BufferAttribute(fv,3));fernGeo.setIndex(fi);fernGeo.computeVertexNormals();const fernMat=new THREE.MeshStandardMaterial({color:0x668246,roughness:1,side:THREE.DoubleSide});for(let i=0;i<60;i++){let z=rr(-16,20),x=streamX(z)+(rand()<.5?-1:1)*rr(2.1,3.9);const m=mesh(fernGeo,fernMat,x,groundY(x,z),z);m.rotation.y=rand()*6.28;m.scale.setScalar(rr(.55,1.5));}
+// A few meadow daisies catch the last light.
+const flowerGeometry=new THREE.IcosahedronGeometry(.055,0),flowerInstance=new THREE.InstancedMesh(flowerGeometry,mat(0xd4c89b),210);scene.add(flowerInstance);for(let i=0;i<210;i++){let x=rr(-11,5),z=rr(4,18);dummy.position.set(x,groundY(x,z)+rr(.22,.5),z);dummy.rotation.set(0,rand()*6,0);dummy.scale.setScalar(rr(.7,1.2));dummy.updateMatrix();flowerInstance.setMatrixAt(i,dummy.matrix)}
+
+// ── Quiet motion: chimney smoke, drifting motes and fireflies ────────────────
+const smokeCanvas=document.createElement('canvas');smokeCanvas.width=smokeCanvas.height=128;const sc=smokeCanvas.getContext('2d'),gradient=sc.createRadialGradient(64,64,4,64,64,64);gradient.addColorStop(0,'rgba(225,222,198,.38)');gradient.addColorStop(.5,'rgba(222,220,204,.16)');gradient.addColorStop(1,'rgba(210,213,204,0)');sc.fillStyle=gradient;sc.fillRect(0,0,128,128);const smokeTex=new THREE.CanvasTexture(smokeCanvas);const smokes=[];for(let i=0;i<13;i++){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,transparent:true,depthWrite:false,color:0xd9dfce}));scene.add(m);smokes.push(m)}
+const firePositions=new Float32Array(40*3),fireSeeds=[];for(let i=0;i<40;i++){fireSeeds.push({x:rr(-9,13),z:rr(-4,17),y:rr(.5,2.5),p:rand()*7});}
+const fireGeo=new THREE.BufferGeometry();fireGeo.setAttribute('position',new THREE.BufferAttribute(firePositions,3));const fireMat=new THREE.PointsMaterial({color:0xffdc8a,size:.045,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false});scene.add(new THREE.Points(fireGeo,fireMat));
+
+// Batch stationary geometry by material: the rich forest remains light on mobile.
+// This local merger needs no addons or additional network dependencies.
+scene.updateMatrixWorld(true);
+const batches=new Map(),originalMeshes=[];
+scene.traverse(o=>{
+  if(!o.isMesh||o.isInstancedMesh||o.material.isShaderMaterial)return;
+  const key=o.material.uuid+'-'+o.castShadow+'-'+o.receiveShadow;
+  if(!batches.has(key))batches.set(key,{material:o.material,cast:o.castShadow,receive:o.receiveShadow,parts:[]});
+  const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();
+  g.applyMatrix4(o.matrixWorld);batches.get(key).parts.push(g);originalMeshes.push(o);
+});
+for(const b of batches.values()){
+  const count=b.parts.reduce((n,g)=>n+g.attributes.position.count,0),g=new THREE.BufferGeometry();
+  for(const [name,size] of [['position',3],['normal',3],['uv',2],['color',3]]){
+    if(name==='color'&&!b.material.vertexColors)continue;
+    const a=new Float32Array(count*size);let offset=0;
+    for(const part of b.parts){const attr=part.getAttribute(name);if(attr)a.set(attr.array,offset);offset+=part.attributes.position.count*size;}
+    g.setAttribute(name,new THREE.BufferAttribute(a,size));
+  }
+  const m=new THREE.Mesh(g,b.material);m.castShadow=b.cast;m.receiveShadow=b.receive;scene.add(m);
+  for(const part of b.parts)part.dispose();
+}
+for(const o of originalMeshes)o.removeFromParent();
+swayTrees.length=0;
+
+// ── Round 2: orbit and ground-level walking share one unchanged scene. ──────
+// WALK_LOGIC_START
+function walkAllowed(x,z){
+  // A 0.32 m body margin surrounds the cabin and its raised porch.
+  if(x < -18 || x > 18 || z < -18 || z > 21)return false;
+  if(x > -5.15 && x < 1.95 && z > -4.15 && z < 3.18)return false;
+  // Keep feet out of the creek; the little timber bridge is the crossing.
+  if(Math.abs(x-streamX(z)) < streamW(z)*.5+.25 && Math.abs(z-5.9) > .62)return false;
+  return true;
+}
+function stepWalk(position,dx,dz){
+  // Swept small steps prevent tunnelling, with independent axes for wall sliding.
+  const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.1));
+  let x=position.x,z=position.z;
+  for(let i=0;i<steps;i++){
+    const nx=x+dx/steps;if(walkAllowed(nx,z))x=nx;
+    const nz=z+dz/steps;if(walkAllowed(x,nz))z=nz;
+  }
+  return {x,z};
+}
+// WALK_LOGIC_END
+let mode='orbit';
+let azimuth=.57,elevation=.39,radius=27,targetRadius=27,targetAzimuth=.57,targetElevation=.39;
+const target=new THREE.Vector3(.1,2.1,.7),lookTarget=new THREE.Vector3();
+const walk={x:.5,z:9.3,y:groundY(.5,9.3)+1.68,yaw:-.27,pitch:-.02};
+const activePointers=new Map(),pressedKeys=new Set(),touchDirections=new Map();let pinchDistance=0;
+const canvas=renderer.domElement,orbitButton=document.getElementById('orbitMode'),walkButton=document.getElementById('walkMode'),pad=document.getElementById('directionPad'),hint=document.getElementById('operationHint');
+const keyDirections={KeyW:'forward',ArrowUp:'forward',KeyS:'backward',ArrowDown:'backward',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
+function clearInput(){pressedKeys.clear();touchDirections.clear();for(const id of activePointers.keys()){try{canvas.releasePointerCapture(id)}catch{}}activePointers.clear();for(const b of pad.querySelectorAll('button'))b.classList.remove('held');}
+function updateCamera(){
+  if(mode==='walk'){
+    camera.position.set(walk.x,walk.y,walk.z);
+    lookTarget.set(walk.x+Math.sin(walk.yaw)*Math.cos(walk.pitch),walk.y+Math.sin(walk.pitch),walk.z-Math.cos(walk.yaw)*Math.cos(walk.pitch));
+    camera.lookAt(lookTarget);return;
+  }
+  const dist=radius*(innerWidth/innerHeight<.8?1.29:1);
+  camera.position.set(target.x+Math.sin(azimuth)*Math.cos(elevation)*dist,target.y+Math.sin(elevation)*dist,target.z+Math.cos(azimuth)*Math.cos(elevation)*dist);camera.lookAt(target);
+}
+function setMode(next){
+  if(next===mode)return;clearInput();mode=next;
+  orbitButton.setAttribute('aria-pressed',String(mode==='orbit'));walkButton.setAttribute('aria-pressed',String(mode==='walk'));pad.hidden=mode!=='walk';
+  hint.innerHTML=mode==='walk'?'WASD / 方向键行走 · 拖拽看向<br>触屏方向按钮行走 · 单指拖动看向':'拖拽环绕 · 滚轮缩放<br>触屏单指旋转 · 双指缩放';
+  updateCamera();
+}
+function resetView(){
+  clearInput();
+  if(mode==='walk'){Object.assign(walk,{x:.5,z:9.3,y:groundY(.5,9.3)+1.68,yaw:-.27,pitch:-.02});}
+  else{azimuth=targetAzimuth=.57;elevation=targetElevation=.39;radius=targetRadius=27;}
+  updateCamera();
+}
+orbitButton.addEventListener('click',()=>setMode('orbit'));walkButton.addEventListener('click',()=>setMode('walk'));document.getElementById('resetView').addEventListener('click',resetView);
+addEventListener('keydown',e=>{if(mode!=='walk'||!keyDirections[e.code]||e.altKey||e.ctrlKey||e.metaKey)return;e.preventDefault();pressedKeys.add(e.code);});
+addEventListener('keyup',e=>{pressedKeys.delete(e.code);});
+addEventListener('blur',clearInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInput()});
+for(const button of pad.querySelectorAll('button')){
+  button.addEventListener('pointerdown',e=>{if(mode!=='walk')return;e.preventDefault();button.setPointerCapture(e.pointerId);touchDirections.set(e.pointerId,button.dataset.direction);button.classList.add('held');});
+  const release=e=>{touchDirections.delete(e.pointerId);button.classList.remove('held');};
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,release);
+}
+canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(activePointers.size===2){const p=[...activePointers.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)}});
+canvas.addEventListener('pointermove',e=>{
+  const old=activePointers.get(e.pointerId);if(!old)return;
+  const dx=e.clientX-old.x,dy=e.clientY-old.y;activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(mode==='walk'){if(activePointers.size===1){walk.yaw+=dx*.004;walk.pitch=clamp(walk.pitch-dy*.003,-1.12,1.12);}return;}
+  if(activePointers.size===1){targetAzimuth-=dx*.004;targetElevation=clamp(targetElevation+dy*.003,.12,1.15)}
+  else if(activePointers.size===2){const p=[...activePointers.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance>0)targetRadius=clamp(targetRadius*pinchDistance/Math.max(d,1),13,45);pinchDistance=d;}
+});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>activePointers.delete(e.pointerId));
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(mode==='orbit')targetRadius=clamp(targetRadius*Math.exp(e.deltaY*.001),13,45)},{passive:false});canvas.addEventListener('contextmenu',e=>e.preventDefault());
+function updateWalking(dt){
+  if(mode!=='walk')return;
+  const directions=new Set([...pressedKeys].map(k=>keyDirections[k]).concat([...touchDirections.values()]));
+  let forward=Number(directions.has('forward'))-Number(directions.has('backward')),right=Number(directions.has('right'))-Number(directions.has('left'));
+  const length=Math.hypot(forward,right);
+  if(length){forward/=length;right/=length;const speed=2.65*dt,dx=(Math.sin(walk.yaw)*forward+Math.cos(walk.yaw)*right)*speed,dz=(-Math.cos(walk.yaw)*forward+Math.sin(walk.yaw)*right)*speed;const next=stepWalk(walk,dx,dz);walk.x=next.x;walk.z=next.z;}
+  let floor=groundY(walk.x,walk.z);
+  if(Math.abs(walk.z-bridgeZ)<.8&&Math.abs(walk.x-bridgeX)<2.4){const u=clamp((walk.x-(bridgeX-2.2))/4.4,0,1);floor=.41+Math.sin(u*Math.PI)*.18;}
+  walk.y+=(floor+1.68-walk.y)*(1-Math.exp(-dt*14));
+}
+updateCamera();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));updateCamera()});
+let start=performance.now(),last=0;const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function animate(now){requestAnimationFrame(animate);if(document.hidden)return;const t=(now-start)/1000,dt=Math.min((now-last)/1000,.05);last=now;const easing=1-Math.exp(-dt*9);azimuth+=(targetAzimuth-azimuth)*easing;elevation+=(targetElevation-elevation)*easing;radius+=(targetRadius-radius)*easing;updateWalking(dt);updateCamera();const motionT=reducedMotion?0:t;waterMat.uniforms.time.value=motionT;for(let i=0;i<smokes.length;i++){const age=(motionT*.18+i/smokes.length)%1;const s=smokes[i];s.position.set(.14+age*2.6+Math.sin(age*9+motionT*.2)*.15,7.5+age*5.3,-2.65+age*.9);s.scale.setScalar(.75+age*2.9);s.material.opacity=Math.sin(age*Math.PI)*.54;s.material.rotation=age*.7;}for(const {g,phase}of swayTrees)g.rotation.z=Math.sin(motionT*.4+phase)*.003;for(let i=0;i<40;i++){const p=fireSeeds[i];firePositions[i*3]=p.x+Math.sin(motionT*.2+p.p)*.45;firePositions[i*3+1]=p.y+Math.sin(motionT*.6+p.p)*.25;firePositions[i*3+2]=p.z+Math.cos(motionT*.25+p.p)*.4;}fireGeo.attributes.position.needsUpdate=true;warmLight.intensity=22+Math.sin(motionT*2.3)*.3;renderer.render(scene,camera)}
+requestAnimationFrame(animate);renderer.render(scene,camera);const loading=document.getElementById('loading');loading.style.opacity='0';setTimeout(()=>loading.remove(),900);
+// Small, read-only diagnostics hook for local verification.
+window.__sceneInfo=()=>({mode,walk:{x:walk.x,y:walk.y,z:walk.z,yaw:walk.yaw,pitch:walk.pitch},three:THREE.REVISION,objects:scene.children.length,grassBlades:gi,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,camera:camera.position.toArray(),webgl:renderer.getContext().isContextLost()?'lost':'ready'});
+</script>
+</body>
+</html>

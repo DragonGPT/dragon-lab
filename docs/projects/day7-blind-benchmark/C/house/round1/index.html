@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>归途 · 林间小屋</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#302e35}body{font-family:Georgia,"Songti SC","Noto Serif SC",serif;color:#fff8e8}canvas{display:block;touch-action:none}.overlay{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(20,26,33,.36),transparent 28%,transparent 72%,rgba(22,26,26,.4))}.head{position:absolute;top:clamp(22px,4vw,48px);left:clamp(22px,4vw,58px);text-shadow:0 2px 14px #28201a}.eyebrow{font:10px/1.3 sans-serif;letter-spacing:.3em;color:#ffdb9c;margin-bottom:10px}h1{font-weight:400;letter-spacing:.22em;font-size:clamp(23px,3vw,36px);margin:0} .line{width:48px;height:1px;background:#f2c790;margin:14px 0}.sub{font-size:12px;letter-spacing:.16em;color:#e4d7c1}.hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);white-space:nowrap;font:11px sans-serif;letter-spacing:.12em;color:#f9eedb;background:rgba(36,40,35,.38);border:1px solid rgba(255,242,213,.18);border-radius:40px;padding:11px 18px;backdrop-filter:blur(5px)}.credit{position:absolute;right:30px;bottom:34px;font:10px sans-serif;letter-spacing:.18em;color:#e9dbc4;opacity:.7}@media(max-width:600px){.credit{display:none}.hint{bottom:20px;font-size:10px}.sub{font-size:10px}}
+</style>
+</head><body><div class="overlay"><div class="head"><div class="eyebrow">A QUIET PLACE TO RETURN</div><h1>归途 · 林间小屋</h1><div class="line"></div><div class="sub">在暮色里，等一盏灯亮起</div></div><div class="hint">拖拽环绕观察 &nbsp; · &nbsp; 滚轮 / 双指缩放</div><div class="credit">DUSK IN THE WOODS &nbsp; / &nbsp; 01</div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+// Renderer, atmosphere and lighting
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xcaa799);scene.fog=new THREE.FogExp2(0xc9a79a,.018);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.prepend(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,150);const target=new THREE.Vector3(0,2,0);let radius=24,azimuth=.68,polar=1.06;
+function updateCamera(){camera.position.set(target.x+radius*Math.sin(polar)*Math.sin(azimuth),target.y+radius*Math.cos(polar),target.z+radius*Math.sin(polar)*Math.cos(azimuth));camera.lookAt(target)}updateCamera();
+scene.add(new THREE.HemisphereLight(0xffddbc,0x394b3b,2.0));const sun=new THREE.DirectionalLight(0xffc28b,2.5);sun.position.set(-9,15,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-22,right:22,top:22,bottom:-22,near:.5,far:50});sun.shadow.bias=-.0003;scene.add(sun);
+const mat=(c,roughness=1,extra={})=>new THREE.MeshStandardMaterial({color:c,roughness,...extra});const wood=mat(0x76513b),wood2=mat(0x9b7051),dark=mat(0x443329),roofmat=mat(0x4d4140),trim=mat(0xc19b72),stone=mat(0x85847a),grass=mat(0x61784a),glow=mat(0xffc66c,.5,{emissive:0xffa23d,emissiveIntensity:2});
+function box(w,h,d,m,x,y,z,cast=true){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o}function cylinder(rt,rb,h,m,x,y,z,n=8){let o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}function sphere(r,m,x,y,z,sx=1,sy=1,sz=1){let o=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
+let seed=1347;function rnd(){seed=(seed*16807)%2147483647;return(seed-1)/2147483646}function rr(a,b){return a+(b-a)*rnd()}
+// A low, irregular meadow island
+const ground=new THREE.Mesh(new THREE.CylinderGeometry(15.7,16.4,.55,72),mat(0x6c7652));ground.position.y=-.32;ground.receiveShadow=true;scene.add(ground);
+// Distant soft sunset disk and hills
+const sunDisk=new THREE.Mesh(new THREE.CircleGeometry(3.1,48),new THREE.MeshBasicMaterial({color:0xf8c7a0,transparent:true,opacity:.65,fog:false}));sunDisk.position.set(-13,10,-32);sunDisk.lookAt(camera.position);scene.add(sunDisk);
+for(let i=0;i<8;i++){let h=sphere(rr(4,7),mat(i%2?0x8d8b7a:0x9c9583),-23+i*7,1,-23,1.6,.65,.8);h.castShadow=false}
+// Stream: a winding ribbon, pale bank, and tiny highlights
+function streamX(z){return -5.0+1.15*Math.sin(z*.35)+.045*z}
+function ribbon(width,y,m){let verts=[],indices=[];for(let i=0;i<=90;i++){let z=-15+i/3;let x=streamX(z);verts.push(x-width/2,y,z,x+width/2,y,z);if(i<90){let j=i*2;indices.push(j,j+2,j+1,j+1,j+2,j+3)}}let g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(indices);g.computeVertexNormals();let o=new THREE.Mesh(g,m);o.receiveShadow=true;scene.add(o);return o}
+ribbon(2.8,.015,mat(0xb6a990));const water=ribbon(2.18,.035,new THREE.MeshStandardMaterial({color:0x6e9a9a,roughness:.22,metalness:.28,transparent:true,opacity:.92,side:THREE.DoubleSide}));
+for(let i=0;i<50;i++){let z=rr(-14,14),x=streamX(z)+rr(-.9,.9);let l=box(rr(.12,.55),.013,.025,mat(0xc4d4c3),x,.055,z,false);l.rotation.y=rr(-.2,.2)}
+// The cabin: stone foundation, horizontal timber siding and gabled ends
+box(6.1,.55,4.7,stone,0,.27,0);box(5.8,3.5,4.35,wood,0,2.25,0);
+for(let y=.7;y<4;y+=.25){box(5.84,.035,.045,dark,0,y,2.19,false);box(.045,.035,4.35,dark,2.92,y,0,false)}
+// gable triangles front and back
+function gable(z){let sh=new THREE.Shape();sh.moveTo(-3,4);sh.lineTo(0,6.1);sh.lineTo(3,4);sh.closePath();let o=new THREE.Mesh(new THREE.ShapeGeometry(sh),wood2);o.position.z=z;o.material.side=THREE.DoubleSide;o.castShadow=true;scene.add(o)}gable(2.18);gable(-2.18);
+// roof planes, ridge, parallel seams
+function beamBetween(a,b,width,depth,m){let mid=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5),v=new THREE.Vector3().subVectors(b,a);let o=box(width,v.length(),depth,m,mid.x,mid.y,mid.z);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());return o}
+const roofAngle=Math.atan2(2.2,3.25),roofLen=Math.hypot(3.25,2.2);for(let s of [-1,1]){let r=box(roofLen,.2,5.1,roofmat,s*1.62,4.98,0);r.rotation.z=-s*roofAngle;for(let z=-2.42;z<=2.43;z+=.37){let seam=box(roofLen,.035,.025,mat(0x776057),s*1.62,5.1,z,false);seam.rotation.z=-s*roofAngle}}
+beamBetween(new THREE.Vector3(-3.25,3.97,2.59),new THREE.Vector3(0,6.18,2.59),.15,.15,trim);beamBetween(new THREE.Vector3(0,6.18,2.59),new THREE.Vector3(3.25,3.97,2.59),.15,.15,trim);box(.18,.18,5.25,dark,0,6.13,0);
+// chimney
+box(.78,1.8,.78,mat(0x746b61),-1.65,5.75,-.7);for(let y=5.1;y<6.6;y+=.3)box(.8,.025,.81,mat(0x4d4943),-1.65,y,-.7,false);box(.98,.16,.98,dark,-1.65,6.68,-.7);
+// Front posts and porch
+box(6.5,.2,1.25,wood2,0,.65,2.72);for(let x of [-2.8,2.8]){box(.18,3.0,.18,dark,x,2.1,3.15);box(.25,.18,.25,trim,x,3.58,3.15)}box(5.8,.18,.2,dark,0,3.55,3.15);
+// door, glowing windows, detailed frames
+box(1.2,2.5,.12,dark,0,1.92,2.25);box(1.02,2.33,.1,mat(0x825638),0,1.92,2.33);for(let x of [-.35,-.12,.12,.35])box(.025,2.2,.02,dark,x,1.92,2.4,false);sphere(.055,mat(0xd3b16f,.35,{metalness:.6}),.36,1.87,2.43);
+function frontWindow(x){box(1.35,1.38,.1,dark,x,2.45,2.24);box(1.12,1.15,.07,glow,x,2.45,2.32);for(let dx of [-.67,.67])box(.12,1.55,.15,trim,x+dx,2.45,2.36);for(let y of [1.73,3.17])box(1.48,.12,.16,trim,x,y,2.36);box(.07,1.18,.12,dark,x,2.45,2.4);box(1.15,.07,.12,dark,x,2.45,2.4);box(1.6,.12,.38,wood2,x,1.67,2.42)}frontWindow(-1.83);frontWindow(1.83);
+// Side window
+box(.1,1.35,1.3,dark,2.94,2.45,-.2);box(.08,1.15,1.1,glow,3.01,2.45,-.2);for(let z of [-.8,.4])box(.15,1.5,.11,trim,3.05,2.45,z);for(let y of [1.73,3.17])box(.15,.12,1.35,trim,3.05,y,-.2);box(.12,1.15,.06,dark,3.07,2.45,-.2);box(.12,.06,1.1,dark,3.07,2.45,-.2);
+const lamp=new THREE.PointLight(0xffb455,16,9,2);lamp.position.set(0,3.1,3.45);scene.add(lamp);box(.3,.4,.25,dark,-.83,2.9,2.55);box(.2,.27,.28,glow,-.83,2.9,2.58);
+// front stairs and stepping stones
+for(let i=0;i<3;i++)box(2.2-i*.15,.18,.55,wood2,0,.55-i*.18,3.38+i*.47);
+for(let i=0;i<12;i++){let z=4.9+i*.65,x=.3+Math.sin(i*.48)*.8;let o=sphere(rr(.25,.45),stone,x,.08,z,1,.22,.7);o.rotation.y=rr(0,3)}
+// Trees: warm trunks and layered foliage
+const foliage=[mat(0x344f3e),mat(0x3e5e44),mat(0x4c6a49),mat(0x6c7950),mat(0x7b8050)];
+function tree(x,z,scale=1,type=0){let trunkH=3.2*scale;cylinder(.16*scale,.3*scale,trunkH,wood,x,trunkH/2,z,7);if(type===0){for(let j=0;j<3;j++){let h=(3.2-j*.52)*scale;let o=new THREE.Mesh(new THREE.ConeGeometry((1.8-j*.2)*scale,h,8),foliage[(j+Math.floor(rnd()*3))%foliage.length]);o.position.set(x,(3+j*.85)*scale,z);o.castShadow=true;o.receiveShadow=true;scene.add(o)}}else{for(let i=0;i<6;i++)sphere(rr(.8,1.3)*scale,foliage[Math.floor(rnd()*foliage.length)],x+rr(-.9,.9)*scale,rr(3.7,5.1)*scale,z+rr(-.8,.8)*scale,1,1.1,1)}}
+const trees=[[-11,-9,1.35,0],[-8,-12,1.4,0],[-3,-12,1.3,1],[2,-12,1.5,0],[7,-11,1.35,0],[11,-8,1.5,1],[12,-3,1.3,0],[12,3,1.25,0],[11,8,1.1,1],[-12,-3,1.3,1],[-12,3,1.15,0],[-11,9,1.05,0],[-8,12,.9,1],[8,12,.85,0],[5,13,.8,1],[-7,-7,.8,0],[8,-6,.9,1]];trees.forEach(t=>tree(...t));
+// Pebbles and grasses, with small flowers across the clearing
+for(let i=0;i<110;i++){let z=rr(-14,14),x=rr(-14,14);if(x*x+z*z>205||Math.abs(x-streamX(z))<1.7|| (Math.abs(x)<4&&z>-3&&z<5))continue;let r=rr(.09,.35);sphere(r, i%4?stone:mat(0xaaa292),x,r*.28,z,1,.5,rr(.6,1.4))}
+for(let i=0;i<550;i++){let x=rr(-15,15),z=rr(-15,15);if(x*x+z*z>225||Math.abs(x-streamX(z))<1.65||(Math.abs(x)<3.7&&z>-2.8&&z<4.6))continue;let h=rr(.12,.36);let blade=new THREE.Mesh(new THREE.ConeGeometry(.045,h,4),foliage[Math.floor(rnd()*foliage.length)]);blade.position.set(x,h/2,z);blade.rotation.z=rr(-.3,.3);scene.add(blade);if(i%10===0){let f=sphere(.055,mat(i%20?0xf0d5a0:0xe9bd79),x,h,z);f.castShadow=false}}
+// Bridge across the stream in the foreground
+for(let i=0;i<11;i++)box(.31,.12,2.9,wood2,streamX(7)+ (i-5)*.3,.35,7);for(let z of [5.65,8.35]){box(3.6,.13,.13,dark,streamX(7),.24,z);for(let x of [-1.5,1.5]){box(.12,.8,.12,dark,streamX(7)+x,.65,z)}box(3.15,.1,.1,trim,streamX(7),1.03,z)}
+// Smoke and fireflies
+const smoke=[];for(let i=0;i<7;i++){let o=sphere(.3, new THREE.MeshStandardMaterial({color:0xe4d3c5,transparent:true,opacity:.16,depthWrite:false}),-1.65,7+i*.35,-.7,1,1,1);o.castShadow=false;smoke.push(o)}
+const fireflies=[];for(let i=0;i<18;i++){let o=sphere(.035,new THREE.MeshBasicMaterial({color:0xffd885}),rr(-8,8),rr(.4,2.5),rr(-5,10));o.userData={y:o.position.y,p:rr(0,6)};fireflies.push(o)}
+// Pointer orbit; touch pinch and wheel zoom only
+let pointers=new Map(),lastPinch=0;const el=renderer.domElement;el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY})});el.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;let old=pointers.get(e.pointerId);if(pointers.size===1){azimuth-=(e.clientX-old.x)*.006;polar=THREE.MathUtils.clamp(polar+(e.clientY-old.y)*.006,.62,1.4)}pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===2){let p=[...pointers.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(lastPinch)radius=THREE.MathUtils.clamp(radius*lastPinch/d,13,36);lastPinch=d}updateCamera()});function up(e){pointers.delete(e.pointerId);lastPinch=0}el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('wheel',e=>{e.preventDefault();radius=THREE.MathUtils.clamp(radius*Math.exp(e.deltaY*.001),13,36);updateCamera()},{passive:false});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
+const clock=new THREE.Clock();function animate(){let t=clock.getElapsedTime();smoke.forEach((o,i)=>{let f=(t*.18+i/7)%1;o.position.set(-1.65+f*.8+Math.sin(t+i)*.08,6.9+f*2.7,-.7);o.scale.setScalar(.65+f*1.4);o.material.opacity=.16*(1-f)});fireflies.forEach(o=>{o.position.y=o.userData.y+Math.sin(t*1.4+o.userData.p)*.15;o.material.opacity=.5+.5*Math.sin(t*2+o.userData.p);o.material.transparent=true});renderer.render(scene,camera);requestAnimationFrame(animate)}animate();
+</script></body></html>

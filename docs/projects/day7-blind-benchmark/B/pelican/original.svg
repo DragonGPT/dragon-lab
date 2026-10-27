@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Pelican on a bicycle</title>
+  <desc id="desc">A cheerful white pelican with a long golden bill pedals a coral-red bicycle along the coast, in a warm retro illustration.</desc>
+  <defs>
+    <pattern id="spokes" width="1" height="1" patternUnits="objectBoundingBox"><path d="M0 0"/></pattern>
+    <g id="wheel" fill="none">
+      <circle r="120" fill="#fff8e9" stroke="#243f46" stroke-width="13"/>
+      <circle r="108" stroke="#debfa1" stroke-width="3"/>
+      <g stroke="#91a6a0" stroke-width="2.5">
+        <path d="M-107 0H107M0-107V107M-76-76L76 76M-76 76L76-76M-99-41L99 41M-99 41L99-41M-41-99L41 99M-41 99L41-99"/>
+      </g>
+      <circle r="11" fill="#e9d1aa" stroke="#243f46" stroke-width="4"/>
+    </g>
+  </defs>
+  <rect width="900" height="900" fill="#f7edd6"/>
+  <circle cx="450" cy="406" r="325" fill="#e3e9d8"/>
+  <circle cx="692" cy="207" r="54" fill="#edb359"/>
+  <g fill="none" stroke="#fffaf0" stroke-width="10" stroke-linecap="round">
+    <path d="M161 237h93m-51-22h82M678 338h69m-34-21h52"/>
+  </g>
+  <path d="M136 576c90-36 137-12 213-24s149-38 224-18 136 25 198-1v157H136Z" fill="#b6d3c6"/>
+  <g fill="none" stroke="#83b6aa" stroke-width="4" stroke-linecap="round">
+    <path d="M157 593h55m38 12h87m300-30h57m22 28h65M527 610h40"/>
+  </g>
+  <ellipse cx="458" cy="772" rx="304" ry="18" fill="#d8cfb4"/>
+  <path d="M120 763h657" fill="none" stroke="#687e70" stroke-width="4" stroke-linecap="round"/>
+  <use href="#wheel" x="275" y="640"/>
+  <use href="#wheel" x="655" y="640"/>
+  <!-- Step-through bicycle, fork and drivetrain -->
+  <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M275 640 406 476 470 640H275L406 476h195L470 640" stroke="#243f46" stroke-width="16"/>
+    <path d="M275 640 406 476 470 640H275L406 476h195L470 640" stroke="#e56d53" stroke-width="10"/>
+    <path d="m655 640-54-164-19-66" stroke="#243f46" stroke-width="15"/>
+    <path d="m655 640-54-164-19-66" stroke="#e56d53" stroke-width="9"/>
+    <path d="m406 476-15-42" stroke="#243f46" stroke-width="9"/>
+    <path d="M359 431h66" stroke="#243f46" stroke-width="18"/>
+    <path d="M581 410h52q25 0 25 19" stroke="#243f46" stroke-width="10"/>
+    <path d="M638 410h-21" stroke="#b98553" stroke-width="14"/>
+    <path d="M175 589q35-63 105-66" stroke="#e56d53" stroke-width="8"/>
+    <circle cx="470" cy="640" r="26" fill="#f7edd6" stroke="#243f46" stroke-width="7"/>
+    <path d="m470 640 27-54m-27 54-27 54" stroke="#243f46" stroke-width="7"/>
+    <path d="M480 586h36M426 694h35" stroke="#243f46" stroke-width="9"/>
+  </g>
+  <!-- Far leg -->
+  <path d="M365 411q-4 48 30 83l-8 105 55 88" fill="none" stroke="#243f46" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M365 411q-4 48 30 83l-8 105 55 88" fill="none" stroke="#d9943d" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m441 680 27 17-47 3Z" fill="#d9943d" stroke="#243f46" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Tail feathers and round body -->
+  <path d="m299 345-69-55 19 53-34-7 65 62" fill="#fffdf1" stroke="#243f46" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M295 319c43-31 105-34 140-11l26 65c-11 45-49 67-96 66-54-1-100-29-105-63-3-22 12-42 35-57Z" fill="#fffdf1" stroke="#243f46" stroke-width="6"/>
+  <path d="M286 382c24 29 67 38 105 24 26-10 44-30 54-54l13 24c-15 47-57 68-99 59-36-6-63-20-73-53Z" fill="#d8ded2"/>
+  <!-- Long curved neck -->
+  <path d="M411 340c14-36 14-70 31-105 13-29 39-58 71-64 32-6 53 13 49 38-3 22-24 35-42 50-25 22-35 58-43 92-8 32-28 48-49 43" fill="#fffdf1" stroke="#243f46" stroke-width="6" stroke-linecap="round"/>
+  <path d="M452 333c7-47 24-72 45-93 18-17 30-30 31-42" fill="none" stroke="#d8ded2" stroke-width="15" stroke-linecap="round"/>
+  <!-- Oversized pelican throat pouch and bill -->
+  <path d="m548 213 207 15c-34 28-84 70-135 67-39-2-57-36-72-82Z" fill="#edb359" stroke="#243f46" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M566 236c24 42 69 58 124 22-34 29-60 37-80 29-23-8-34-28-44-51Z" fill="#dc8c3e"/>
+  <path d="M546 202c55-2 141 7 210 25l-203 12Z" fill="#f5c85f" stroke="#243f46" stroke-width="6" stroke-linejoin="round"/>
+  <path d="m565 213 132 10" stroke="#fff0ad" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="527" cy="199" r="7" fill="#243f46"/>
+  <circle cx="529" cy="197" r="2" fill="#fffdf1"/>
+  <path d="M507 181q10-6 18-3" fill="none" stroke="#243f46" stroke-width="4" stroke-linecap="round"/>
+  <!-- Sea-green kerchief streaming in the wind -->
+  <path d="m453 284 42 21-10 20-40-21Z" fill="#417e77" stroke="#243f46" stroke-width="5"/>
+  <path d="m451 297-62-27 7 26-39 2 82 22Z" fill="#417e77" stroke="#243f46" stroke-width="5" stroke-linejoin="round"/>
+  <path d="m432 299-34-13" stroke="#8ab9a4" stroke-width="4" stroke-linecap="round"/>
+  <!-- Near leg reaches the raised pedal -->
+  <path d="M406 421q20 34 56 60l-13 49 46 48" fill="none" stroke="#243f46" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M406 421q20 34 56 60l-13 49 46 48" fill="none" stroke="#edb359" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m490 570 32 13-47 5Z" fill="#edb359" stroke="#243f46" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Wing curves forward to hold the handlebars -->
+  <path d="M331 341c31-27 76-14 106 10 32 27 76 34 113 32l53 14c11 3 17 10 12 17-5 8-18 4-26 2-55 11-116 0-157-22-24 10-49 8-70-4-20-12-30-26-31-49Z" fill="#fffdf1" stroke="#243f46" stroke-width="6" stroke-linejoin="round"/>
+  <g fill="none" stroke="#a9b9ad" stroke-width="4" stroke-linecap="round">
+    <path d="M353 355c18 22 41 32 69 28M365 344c17 18 35 27 56 28M443 380c33 17 76 23 113 20"/>
+  </g>
+  <!-- Tiny details and coastal grasses -->
+  <circle cx="606" cy="393" r="9" fill="#e4ad51" stroke="#243f46" stroke-width="4"/>
+  <path d="M123 762q-4-19-14-26m18 26q2-31 15-40m-11 40q10-18 22-21M758 762q-4-25-16-34m18 34q5-38 17-48m-13 48q13-22 24-24" fill="none" stroke="#687e70" stroke-width="4" stroke-linecap="round"/>
+  <g fill="none" stroke="#b1b9a3" stroke-width="5" stroke-linecap="round"><path d="M142 421h58m-42 22h30M124 465h62"/></g>
+</svg>

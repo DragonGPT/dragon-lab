@@ -12,5 +12,15 @@
     ],
     "url": "projects/relax/",
     "tip": "打开就能用，不需要账号或通知权限。"
+  },
+  {
+    "id": "day7-blind-benchmark",
+    "number": "02",
+    "title": "先看作品，再猜模型",
+    "category": "匿名创作实验",
+    "description": "A / B / C 同题创作：鹈鹕、看图描述与复原、森林小屋及移动加赛。先观察作品，再查看方法与验证范围。",
+    "features": ["原始作品保留", "方法与提示词公开", "不预设排名"],
+    "url": "projects/day7-blind-benchmark/",
+    "tip": "房屋浏览器实测待核；文件存在不代表交互通过。"
   }
 ]
